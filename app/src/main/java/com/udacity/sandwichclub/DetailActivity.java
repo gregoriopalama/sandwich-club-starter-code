@@ -1,12 +1,16 @@
 package com.udacity.sandwichclub;
 
 import android.content.Intent;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ImageView;
+import android.text.TextUtils;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
+import com.udacity.sandwichclub.databinding.ActivityDetailBinding;
 import com.udacity.sandwichclub.model.Sandwich;
 import com.udacity.sandwichclub.utils.JsonUtils;
 
@@ -15,12 +19,14 @@ public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_POSITION = "extra_position";
     private static final int DEFAULT_POSITION = -1;
 
+    private ActivityDetailBinding binding;
+    private Sandwich sandwich;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_detail);
-
-        ImageView ingredientsIv = findViewById(R.id.image_iv);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_detail);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         Intent intent = getIntent();
         if (intent == null) {
@@ -36,7 +42,7 @@ public class DetailActivity extends AppCompatActivity {
 
         String[] sandwiches = getResources().getStringArray(R.array.sandwich_details);
         String json = sandwiches[position];
-        Sandwich sandwich = JsonUtils.parseSandwichJson(json);
+        sandwich = JsonUtils.parseSandwichJson(json);
         if (sandwich == null) {
             // Sandwich data unavailable
             closeOnError();
@@ -46,9 +52,20 @@ public class DetailActivity extends AppCompatActivity {
         populateUI();
         Picasso.with(this)
                 .load(sandwich.getImage())
-                .into(ingredientsIv);
+                .into(binding.imageIv);
 
         setTitle(sandwich.getMainName());
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                break;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void closeOnError() {
@@ -57,6 +74,23 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void populateUI() {
+        if (sandwich.getAlsoKnownAs().size() == 0) {
+            binding.alsoKnownTv.setVisibility(View.GONE);
+            binding.alsoKnownLbl.setVisibility(View.GONE);
+        } else {
+            binding.alsoKnownTv.setText(TextUtils.join(", ", sandwich.getAlsoKnownAs()));
+        }
 
+        if (sandwich.getPlaceOfOrigin().equals("")) {
+            binding.originTv.setVisibility(View.GONE);
+            binding.originLbl.setVisibility(View.GONE);
+        } else {
+            binding.originTv.setText(sandwich.getPlaceOfOrigin());
+        }
+
+        binding.descriptionTv.setText(sandwich.getDescription());
+        binding.ingredientsTv.setText(TextUtils.join(", ", sandwich.getIngredients()));
+
+        binding.imageIv.setContentDescription(sandwich.getMainName());
     }
 }
